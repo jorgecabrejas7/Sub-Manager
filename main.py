@@ -2,7 +2,8 @@ import os
 import re
 import subprocess
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
+from multiprocessing import Process
+from PyQt5.QtCore import *
 from langdetect import detect
 import json
 from pprint import pprint
@@ -30,7 +31,6 @@ def extract_subtitle_sample(mkv_file, track_id):
         if os.path.exists(temp_output):
             os.remove(temp_output)
 
-# Function to get subtitle tracks from an MKV file using ffprobe
 def get_subtitle_tracks_ffmpeg(mkv_file):
     command = [
         "ffprobe",
@@ -40,25 +40,25 @@ def get_subtitle_tracks_ffmpeg(mkv_file):
         "-of", "json",  # Output in JSON format
         mkv_file
     ]
+    result = subprocess.run(command, capture_output=True, text=True)
     try:
-        print("Running command:", " ".join(command))  # Debugging line to show the command
-        result = subprocess.run(command, capture_output=True, text=True)
-        # Parse the JSON output
+        # Print the standard output and error for debugging
+        print("Standard Output:", result.stdout)
+        print("Standard Error:", result.stderr)
+
         streams_info = json.loads(result.stdout)
-        pprint(streams_info)  # Debugging line to print the parsed JSON
 
         tracks = []
         for stream in streams_info.get('streams', []):
-            # Get the track index
-            track_id = str(stream.get('index'))
-            # Try to get the language from the tags, fall back to 'Unknown' if not present
-            track_lang = stream.get('tags', {}).get('language', 'Unknown')
-            # Try to get the title from the tags, could contain the language
-            track_title = stream.get('tags', {}).get('title', 'No title available')
-            # Combine language and title for more complete information
-            track_info = f"Language: {track_lang}"
-            if track_title != 'No title available':
-                track_info += f", Title: {track_title}"
+            track_id = stream.get('index')
+            track_lang = stream.get('tags', {}).get('language', 'und')
+            track_title = stream.get('tags', {}).get('title', '')
+
+            # New format: "Language: {title} ({language})"
+            track_info = f"{track_title} ({track_lang})"
+            if track_lang == 'und' and not track_title:
+                track_info = 'Unknown'
+
             tracks.append((track_id, track_info))
 
         return tracks
@@ -66,10 +66,8 @@ def get_subtitle_tracks_ffmpeg(mkv_file):
         print(f"Error decoding JSON: {e}")
         return []
     except subprocess.CalledProcessError as e:
-        print(f"ffprobe command failed with error: {e.stderr}")  # Debugging line to show the error message
+        print(f"ffprobe command failed with error: {e.stderr}")
         return []
-
-
 
 
 
@@ -121,12 +119,11 @@ class SubtitleSelectionDialog(QDialog):
 class SubtitleManager(QWidget):
     def __init__(self):
         super().__init__()
-
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle('Subtitle Manager')
-        layout = QVBoxLayout()
+        layout = QVBoxLayout(self)
 
         self.dirLabel = QLabel('Select a directory containing MKV files:')
         layout.addWidget(self.dirLabel)
@@ -136,11 +133,15 @@ class SubtitleManager(QWidget):
         layout.addWidget(self.dirButton)
 
         self.fileList = QListWidget(self)
+        self.fileList.setSelectionMode(QListWidget.ExtendedSelection)
         layout.addWidget(self.fileList)
 
-        self.processButton = QPushButton('Process Files', self)
-        self.processButton.clicked.connect(self.processFiles)
+        self.processButton = QPushButton('Process Selected Files', self)
+        self.processButton.clicked.connect(self.processSelectedFiles)
         layout.addWidget(self.processButton)
+
+        self.useFirstSelectionCheckbox = QCheckBox('Use first file selection for all files', self)
+        layout.addWidget(self.useFirstSelectionCheckbox)
 
         self.setLayout(layout)
 
@@ -154,22 +155,51 @@ class SubtitleManager(QWidget):
         for root, dirs, files in os.walk(dir_path):
             for file in files:
                 if file.endswith(".mkv"):
-                    full_path = os.path.join(root, file)
-                    item = QListWidgetItem(full_path)
+                    item = QListWidgetItem(file)  # Add only the basename
+                    item.setData(Qt.UserRole, os.path.join(root, file))  # Store the full path as user data
                     self.fileList.addItem(item)
 
-    def processFiles(self):
-        for index in range(self.fileList.count()):
-            item = self.fileList.item(index)
-            mkv_file = item.text()
-            tracks = get_subtitle_tracks(mkv_file)
+    @pyqtSlot()
+    def processSelectedFiles(self):
+        useFirstSelection = self.useFirstSelectionCheckbox.isChecked()
+        selectedItems = self.fileList.selectedItems()
 
-            dialog = SubtitleSelectionDialog(tracks, self)
+        firstSelection = None
+        if useFirstSelection and selectedItems:
+            first_file = selectedItems[0].data(Qt.UserRole)
+            tracks = get_subtitle_tracks(first_file)
+            dialog = SubtitleSelectionDialog(tracks)
+            dialog.setWindowTitle(os.path.basename(first_file))
             if dialog.exec_():
                 selected, main_track = dialog.selected_tracks()
-                print(f"Selected tracks for {mkv_file}: {selected}")
-                print(f"Main track for {mkv_file}: {main_track}")
-                # Implement the actual subtitle modification logic here
+                firstSelection = (selected, main_track)
+
+        processes = []
+        for item in selectedItems:
+            mkv_file = item.data(Qt.UserRole)
+            if useFirstSelection and firstSelection:
+                process = Process(target=self.processFile, args=(mkv_file, firstSelection))
+            else:
+                tracks = get_subtitle_tracks(mkv_file)
+                dialog = SubtitleSelectionDialog(tracks)
+                dialog.setWindowTitle(os.path.basename(mkv_file))
+                if dialog.exec_():
+                    selected, main_track = dialog.selected_tracks()
+                    process = Process(target=self.processFile, args=(mkv_file, (selected, main_track)))
+                else:
+                    continue  # Skip file if dialog is canceled
+            processes.append(process)
+            process.start()
+
+        for process in processes:
+            process.join()
+
+    def processFile(self, mkv_file, selection):
+        print(f"Processing {mkv_file} with selection: {selection}")
+        # Implement the logic to process a single MKV file with the given selection
+        # Example: Use 'selection' to handle subtitle modifications
+
+
 
 if __name__ == '__main__':
     app = QApplication([])
