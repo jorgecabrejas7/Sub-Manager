@@ -61,4 +61,5 @@ class TestRemoveSubtitlesCommand(unittest.TestCase):
                 mock_dialog.return_value.selected_tracks_info = [{"id": 1, "language": "eng", "is_main": True}]
                 self.assertEqual(self.command.get_track_info("/path/to/file1.mkv"), [{"id": 1, "language": "eng", "is_main": True}])
 
-S    unittest.main()
+if __name__ == "__main__":
+    unittest.main()
