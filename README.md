@@ -66,11 +66,11 @@ Each command should implement the `Command` interface, which includes the follow
     class MyCustomCommand(Command):
     def init(self, selected_files):
     # Initialization code
-    pass
+        pass
 
     def execute(self):
     # Command execution logic
-    pass
+        pass
     ```
 
 3. **Register the Command**: Use the `register_command` decorator to make your command available in the application.
