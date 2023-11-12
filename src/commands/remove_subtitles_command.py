@@ -1,5 +1,6 @@
 from commands.command import Command
 from PyQt6.QtWidgets import *
+from PyQt6.QtCore import * 
 from registry.register_command import register_command
 import subprocess
 from utils.mkv_utils import get_subtitle_tracks_ffmpeg
@@ -31,7 +32,6 @@ class RemoveSubtitlesCommand(Command):
         self.output_folder = QFileDialog.getExistingDirectory(None, "Select Output Folder")
 
         use_same_tracks = False
-        selected_tracks = None
         
         for file in self.selected_files:
             if not use_same_tracks:
@@ -41,9 +41,14 @@ class RemoveSubtitlesCommand(Command):
             else:
                 self.file_tracks[file] = tracks
 
-        self.executor = ThreadPoolExecutor()
+        self.thread_pool = QThreadPool()
+        self.progress_dialog = QProgressDialog("Removing subtitles...", "Cancel", 0, len(self.selected_files))
+        self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+
         for file, tracks in self.file_tracks.items():
-            self.remux_file(file, tracks)
+            worker = Worker(self.remux_file, file, tracks)
+            worker.signals.finished.connect(self.update_progress)
+            self.thread_pool.start(worker)
 
 
 
@@ -52,7 +57,7 @@ class RemoveSubtitlesCommand(Command):
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mkv")
         temp_output_file = temp_file.name
         temp_file.close()
-        
+
         final_output_file = os.path.join(self.output_folder, os.path.basename(file)) if self.overwrite else self.get_output_filename()
 
         track_ids = [str(track["id"]) for track in tracks]
@@ -65,7 +70,7 @@ class RemoveSubtitlesCommand(Command):
         command += f' "{file}"'
         print(f"{command = }")
 
-        self.executor.submit(self.run_command, command, temp_output_file, final_output_file)
+        self.run_command(command, temp_output_file, final_output_file)
 
     def run_command(self, command, temp_output_file, final_output_file):
         os.system(command)
@@ -86,6 +91,23 @@ class RemoveSubtitlesCommand(Command):
                 selected_tracks = dialog.selected_tracks_info
                 self.file_tracks[file] = selected_tracks
                 return selected_tracks
-                
-                
     
+    def update_progress(self):
+        current_value = self.progress_dialog.value()
+        self.progress_dialog.setValue(current_value + 1)
+                
+
+class WorkerSignals(QObject):
+    finished = pyqtSignal()
+
+class Worker(QRunnable):
+    def __init__(self, func, *args, **kwargs):
+        super().__init__()
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    def run(self):
+        self.func(*self.args, **self.kwargs)
+        self.signals.finished.emit()
