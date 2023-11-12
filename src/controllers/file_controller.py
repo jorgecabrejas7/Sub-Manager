@@ -1,6 +1,6 @@
 from pathlib import Path
 from PyQt6.QtWidgets import QFileDialog
-from src.models.file_model import MKVFile, SubtitleFile
+from models.file_model import MKVFile, SubtitleFile
 
 class FileController:
     def __init__(self, view):

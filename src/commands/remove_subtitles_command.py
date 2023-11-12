@@ -1,10 +1,10 @@
-from src.commands.command import Command
+from commands.command import Command
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import * 
-from src.registry.register_command import register_command
+from registry.register_command import register_command
 import subprocess
-from src.utils.mkv_utils import get_subtitle_tracks_ffmpeg
-from src.views.track_selection_dialog import MainTrackSelectionDialog
+from utils.mkv_utils import get_subtitle_tracks_ffmpeg
+from views.track_selection_dialog import MainTrackSelectionDialog
 import os
 from concurrent.futures import ThreadPoolExecutor
 import shutil
