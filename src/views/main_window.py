@@ -31,14 +31,54 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.mkv_list)  # Add to the central layout
         self.layout.addWidget(self.subtitle_list)
 
-        # Buttons
+        # Create a grid layout for the buttons
+        button_layout = QGridLayout()
+
+        # Create the buttons
         open_file_button = QPushButton("Open Files")
         open_file_button.clicked.connect(lambda: self.controller.open_file_dialog(True))
-        self.layout.addWidget(open_file_button)  # Add to the central layout
 
         open_folder_button = QPushButton("Open Folder")
         open_folder_button.clicked.connect(lambda: self.controller.open_file_dialog(False))
-        self.layout.addWidget(open_folder_button)  # Add to the central layout
+
+        self.clear_mkv_button = QPushButton("Clear MKV Files")
+        self.clear_mkv_button.clicked.connect(self.clear_mkv_files)
+
+        self.clear_sub_button = QPushButton("Clear Subtitle Files")
+        self.clear_sub_button.clicked.connect(self.clear_sub_files)
+
+        select_all_button = QPushButton("Select All Files")
+        select_all_button.clicked.connect(self.select_all_files)
+
+        deselect_all_button = QPushButton("Deselect All Files")
+        deselect_all_button.clicked.connect(self.deselect_all_files)
+
+        # Add the buttons to the grid layout
+        button_layout.addWidget(open_file_button, 0, 0)
+        button_layout.addWidget(open_folder_button, 0, 1)
+        button_layout.addWidget(self.clear_mkv_button, 1, 0)
+        button_layout.addWidget(self.clear_sub_button, 1, 1)
+        button_layout.addWidget(select_all_button, 2, 0)
+        button_layout.addWidget(deselect_all_button, 2, 1)
+
+        # Add the grid layout to the central layout
+        self.layout.addLayout(button_layout)
+
+    def deselect_all_files(self):
+        self.mkv_list.clearSelection()
+        self.subtitle_list.clearSelection()
+
+    def select_all_files(self):
+        self.mkv_list.selectAll()
+        self.subtitle_list.selectAll()
+
+    def clear_mkv_files(self):
+        # Clear the MKV file list
+        self.mkv_list.clear()
+
+    def clear_sub_files(self):
+        # Clear the subtitle file list
+        self.subtitle_list.clear()
 
     def setup_menu_bar(self):
         self.menu_bar = self.menuBar()  # Create the menu bar
