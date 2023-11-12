@@ -19,9 +19,6 @@ This tool is designed to simplify the management of MKV video files and their as
 - FFmpeg (for certain functionalities)
 - MKVToolNix (for handling MKV files)
 
-Certainly! Here's the next part of the README.md content:
-
-markdown
 
 ### Installation
 
@@ -44,7 +41,7 @@ markdown
 ### Running the Application
 
 Execute the main script to launch the application:
-    ```bash
+    ```
     python src/main.py
     ```
 
