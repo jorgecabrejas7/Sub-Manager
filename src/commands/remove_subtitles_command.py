@@ -33,13 +33,15 @@ class RemoveSubtitlesCommand(Command):
 
         use_same_tracks = False
         
+        i = 0
         for file in self.selected_files:
             if not use_same_tracks:
                 tracks = self.get_track_info(file)
                 # Ask the user if they want to use the same tracks for the rest of the files
-                use_same_tracks = QMessageBox.question(None, "Use Same Tracks", "Do you want to use the same tracks for the rest of the files?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes
+                if i == 0: use_same_tracks = QMessageBox.question(None, "Use Same Tracks", "Do you want to use the same tracks for the rest of the files?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes
             else:
                 self.file_tracks[file] = tracks
+            i += 1
 
         self.thread_pool = QThreadPool()
         self.progress_dialog = QProgressDialog("Removing subtitles...", "Cancel", 0, len(self.selected_files))
