@@ -102,4 +102,4 @@ Contributions to the project are welcome! Please adhere to the following guideli
 
 ## License
 
-Include license information here.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
