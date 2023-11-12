@@ -1,10 +1,10 @@
 import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import QAction
-from registry.command_registry import CommandRegistry
-from controllers.file_controller import FileController
-from controllers.command_controller import CommandController
-from views.track_selection_dialog import TrackSelectionDialog
+from src.registry.command_registry import CommandRegistry
+from src.controllers.file_controller import FileController
+from src.controllers.command_controller import CommandController
+from src.views.track_selection_dialog import TrackSelectionDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):

@@ -1,8 +1,8 @@
-from commands.command import Command
+from src.commands.command import Command
 from PyQt6.QtWidgets import *
-from utils.mkv_utils import get_subtitle_tracks_ffmpeg
-from registry.register_command import register_command
-from views.track_selection_dialog import TrackSelectionDialog
+from src.utils.mkv_utils import get_subtitle_tracks_ffmpeg
+from src.registry.register_command import register_command
+from src.views.track_selection_dialog import TrackSelectionDialog
 import subprocess
 import os
 

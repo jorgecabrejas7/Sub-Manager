@@ -1,4 +1,4 @@
-from registry.command_registry import CommandRegistry
+from src.registry.command_registry import CommandRegistry
 
 def register_command(name):
     def decorator(command_class):
