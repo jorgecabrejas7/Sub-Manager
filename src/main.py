@@ -5,7 +5,6 @@ import pkgutil
 import importlib
 import os
 
-
 def load_all_commands(directory):
     for (_, module_name, _) in pkgutil.iter_modules([directory]):
         # Import the module
@@ -18,6 +17,6 @@ def main():
     main_window = MainWindow()
     main_window.show()
     sys.exit(app.exec())
-
+#
 if __name__ == "__main__":
     main()
